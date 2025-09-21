@@ -33,6 +33,10 @@ public class BlocoMemoria {
         this.proximo = proximo;
     }
 
+    public void setTamanho(int tamanho){
+        this.tamanho = tamanho;
+    }
+
     public void alocar(Processo processo) {
         if (!ocupado && processo.getTamanho() <= tamanho) {
             this.processo = processo;
