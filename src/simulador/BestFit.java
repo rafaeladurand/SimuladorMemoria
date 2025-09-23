@@ -1,6 +1,5 @@
 package simulador;
 
-// Implementa a interface Alocador
 public class BestFit implements Alocador {
     private Memoria memoria;
 

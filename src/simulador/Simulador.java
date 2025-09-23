@@ -1,131 +1,95 @@
 package simulador;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-
 
 public class Simulador {
 
     private static final int DURACAO_SIMULACAO_SEGUNDOS = 100;
-    private static final int N_REPETICOES_EXPERIMENTO = 100;
+    private static final int N_REPETICOES_EXPERIMENTO = 1;
 
-    private static final double PROBABILIDADE_CHEGADA_PROCESSO = 0.7;
     private static final int TAMANHO_MIN_PROCESSO = 10;
     private static final int TAMANHO_MAX_PROCESSO = 100;
-    private static final int VIDA_MIN_PROCESSO = 5;
-    private static final int VIDA_MAX_PROCESSO = 20;
-
 
     public static void main(String[] args) {
-        System.out.println("Iniciando Experimento de Simulação de Alocação de Memória...");
-        System.out.printf("Configurações: %d repetições de %d segundos cada.\n\n",
-                N_REPETICOES_EXPERIMENTO, DURACAO_SIMULACAO_SEGUNDOS);
+        System.out.println("Iniciando Simulação de Alocação de Memória (Atividade 3)...");
+        System.out.printf("Duração da simulação: %d segundos.\n\n", DURACAO_SIMULACAO_SEGUNDOS);
 
         List<String> nomesAlgoritmos = List.of("First-Fit", "Best-Fit", "Next-Fit", "Worst-Fit");
 
         for (String nomeAlgoritmo : nomesAlgoritmos) {
-            executarExperimento(nomeAlgoritmo);
+            executarSimulacaoParaAtividade(nomeAlgoritmo);
         }
     }
 
-    private static void executarExperimento(String nomeAlgoritmo) {
-        long totalAlocacoesBemSucedidas = 0;
-        long totalAlocacoesFalhas = 0;
-        double mediaGeralFragmentacao = 0;
-        double mediaGeralUtilizacao = 0;
+    private static void executarSimulacaoParaAtividade(String nomeAlgoritmo) {
         Random random = new Random();
 
-        for (int i = 0; i < N_REPETICOES_EXPERIMENTO; i++) {
-            Metricas resultadoDaRodada = rodarSimulacaoUnica(nomeAlgoritmo, random);
-            
-            totalAlocacoesBemSucedidas += resultadoDaRodada.getAlocacoesBemSucedidas();
-            totalAlocacoesFalhas += resultadoDaRodada.getAlocacoesFalhas();
-            mediaGeralFragmentacao += resultadoDaRodada.getMediaFragmentacaoExterna();
-            mediaGeralUtilizacao += resultadoDaRodada.getMediaUtilizacaoMemoria();
-        }
-
-        double taxaSucesso = (double) totalAlocacoesBemSucedidas / (totalAlocacoesBemSucedidas + totalAlocacoesFalhas) * 100.0;
-        double mediaFinalFragmentacao = mediaGeralFragmentacao / N_REPETICOES_EXPERIMENTO;
-        double mediaFinalUtilizacao = mediaGeralUtilizacao / N_REPETICOES_EXPERIMENTO;
-
-        imprimirResultadosFinais(nomeAlgoritmo, taxaSucesso, mediaFinalFragmentacao, mediaFinalUtilizacao);
+        Metricas resultadoDaRodada = rodarSimulacaoUnica(nomeAlgoritmo, random);
+        
+        imprimirResultadosFinais(nomeAlgoritmo, resultadoDaRodada);
     }
 
     private static Metricas rodarSimulacaoUnica(String nomeAlgoritmo, Random random) {
         Processo.resetarContadorId();
         Memoria memoria = new Memoria();
         Alocador alocador = null;
-        
+
         switch (nomeAlgoritmo) {
-            case "Best-Fit":
-                alocador = new BestFit(memoria);
-                break;
-
-            case "First-Fit":
-                alocador = new FirstFit(memoria);
-                break;
-
-            case "Worst-Fit":
-                alocador = new Worstfit(memoria);
-                break;
-
-            case "Next-Fit":
-                alocador = new Nextfit(memoria);
-                break;
-        
+            case "Best-Fit":  alocador = new BestFit(memoria); break;
+            case "First-Fit": alocador = new FirstFit(memoria); break;
+            case "Worst-Fit": alocador = new Worstfit(memoria); break;
+            case "Next-Fit":  alocador = new Nextfit(memoria); break;
             default:
-                System.out.println("Não foi possível reconhecer o algoritimo: " + nomeAlgoritmo);
-                break;
+                System.out.println("Algoritmo não reconhecido: " + nomeAlgoritmo);
+                return new Metricas(memoria);
         }
         
         GeradorDeProcessos gerador = new GeradorDeProcessos();
         Metricas metricasDaRodada = new Metricas(memoria);
 
-        Map<Processo, Integer> processosAtivos = new HashMap<>();
+        List<Processo> processosAtivos = new ArrayList<>();
 
         for (int tempoAtual = 0; tempoAtual < DURACAO_SIMULACAO_SEGUNDOS; tempoAtual++) {
 
-            Iterator<Map.Entry<Processo, Integer>> iterator = processosAtivos.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<Processo, Integer> entry = iterator.next();
-                Processo p = entry.getKey();
-                int vidaRestante = entry.getValue() - 1; 
+            if (!processosAtivos.isEmpty()) {
 
-                if (vidaRestante <= 0) {
-                    alocador.desalocar(p);
-                    iterator.remove();
-                } else {
-                    entry.setValue(vidaRestante);
+                int processosARemover = 1 + random.nextInt(2); 
+                
+                for (int i = 0; i < processosARemover && !processosAtivos.isEmpty(); i++) {
+                    int indiceAleatorio = random.nextInt(processosAtivos.size());
+                    Processo processoRemovido = processosAtivos.remove(indiceAleatorio);
+                    alocador.desalocar(processoRemovido);
                 }
             }
-
-            if (random.nextDouble() < PROBABILIDADE_CHEGADA_PROCESSO) {
+            for (int i = 0; i < 2; i++) {
                 Processo novoProcesso = gerador.gerarProcesso(TAMANHO_MIN_PROCESSO, TAMANHO_MAX_PROCESSO);
                 
                 if (alocador.alocar(novoProcesso)) {
-                    int tempoDeVida = random.nextInt(VIDA_MAX_PROCESSO - VIDA_MIN_PROCESSO + 1) + VIDA_MIN_PROCESSO;
-                    processosAtivos.put(novoProcesso, tempoDeVida);
+                    processosAtivos.add(novoProcesso); 
                     metricasDaRodada.registrarAlocacaoBemSucedida();
                 } else {
                     metricasDaRodada.registrarAlocacaoFalha();
                 }
             }
-
+            
             metricasDaRodada.capturarMetricasDoTick();
         }
         return metricasDaRodada;
     }
 
-    private static void imprimirResultadosFinais(String nomeAlgoritmo, double taxaSucesso, double mediaFragmentacao, double mediaUtilizacao) {
+    private static void imprimirResultadosFinais(String nomeAlgoritmo, Metricas metricas) {
+        long totalAlocacoes = metricas.getAlocacoesBemSucedidas() + metricas.getAlocacoesFalhas();
+        double taxaSucesso = (totalAlocacoes == 0) ? 0 : (double) metricas.getAlocacoesBemSucedidas() / totalAlocacoes * 100.0;
+        
         System.out.println("======================================================");
         System.out.printf("Resultados Finais para o Algoritmo: %s\n", nomeAlgoritmo);
         System.out.println("------------------------------------------------------");
         System.out.printf("Taxa de Sucesso de Alocação: %.2f%%\n", taxaSucesso);
-        System.out.printf("Utilização Média da Memória: %.2f%%\n", mediaUtilizacao);
-        System.out.printf("Média de Blocos Livres (Fragmentação): %.2f blocos\n", mediaFragmentacao);
+        System.out.printf("Utilização Média da Memória: %.2f%%\n", metricas.getMediaUtilizacaoMemoria());
+        System.out.printf("Média de Blocos Livres (Fragmentação): %.2f blocos\n", metricas.getMediaFragmentacaoExterna());
         System.out.println("======================================================\n");
     }
 }
@@ -134,7 +98,6 @@ class Metricas {
     private Memoria memoria;
     private long alocacoesBemSucedidas = 0;
     private long alocacoesFalhas = 0;
-    
     private List<Integer> contagemBlocosLivresPorTick = new java.util.ArrayList<>();
     private List<Double> utilizacaoMemoriaPorTick = new java.util.ArrayList<>();
 
@@ -157,7 +120,7 @@ class Metricas {
             atual = atual.getProximo();
         }
         contagemBlocosLivresPorTick.add(blocosLivres);
-        double utilizacao = (double) memoriaOcupada / memoria.getTamanhoTotal() * 100.0;
+        double utilizacao = (memoria.getTamanhoTotal() == 0) ? 0 : (double) memoriaOcupada / memoria.getTamanhoTotal() * 100.0;
         utilizacaoMemoriaPorTick.add(utilizacao);
     }
     
@@ -169,4 +132,3 @@ class Metricas {
         return utilizacaoMemoriaPorTick.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
     }
 }
-
