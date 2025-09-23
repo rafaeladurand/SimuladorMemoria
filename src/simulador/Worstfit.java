@@ -1,13 +1,19 @@
 package simulador;
 
-public class Worstfit {
+public class Worstfit implements Alocador {
     private final Memoria memoria;
 
     public Worstfit(Memoria memoria) {
         this.memoria = memoria;
     }
 
-    public void alocar(Processo processo) {
+    @Override
+    public String getNome() {
+        return "Worst-Fit";
+    }
+
+    @Override
+    public boolean alocar(Processo processo) {
         BlocoMemoria atual = memoria.getPrimeiroBloco();
         BlocoMemoria piorBloco = null;
 
@@ -22,23 +28,21 @@ public class Worstfit {
 
         if (piorBloco != null) {
             memoria.alocar(piorBloco, processo);
-            System.out.println("Processo " + processo.getId()
-                    + " alocado (WorstFit) no bloco de tamanho " + piorBloco.getTamanho());
+            return true;
         } else {
-            System.out.println("Nao ha espaco suficiente para o processo " + processo.getId());
+            return false;
         }
     }
 
+    @Override
     public void desalocar(Processo processo) {
         BlocoMemoria atual = memoria.getPrimeiroBloco();
         while (atual != null) {
             if (atual.isOcupado() && atual.getProcesso().getId() == processo.getId()) {
                 memoria.desalocar(atual);
-                System.out.println("Processo " + processo.getId() + " desalocado (WorstFit).");
                 return;
             }
             atual = atual.getProximo();
         }
-        System.out.println("Processo " + processo.getId() + " nao encontrado na memoria");
     }
 }

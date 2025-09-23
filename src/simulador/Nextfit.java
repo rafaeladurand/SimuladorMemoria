@@ -1,6 +1,6 @@
 package simulador;
 
-public class Nextfit {
+public class Nextfit implements Alocador { 
     private Memoria memoria;
     private BlocoMemoria cursor;
 
@@ -9,10 +9,15 @@ public class Nextfit {
         this.cursor = memoria.getPrimeiroBloco();
     }
 
-    public void alocar(Processo processo) {
+    @Override
+    public String getNome() {
+        return "Next-Fit";
+    }
+
+    @Override
+    public boolean alocar(Processo processo) {
         if (memoria.getPrimeiroBloco() == null) {
-            System.out.println("Memória vazia.");
-            return;
+            return false;
         }
         if (cursor == null) cursor = memoria.getPrimeiroBloco();
 
@@ -22,30 +27,27 @@ public class Nextfit {
         do {
             if (!atual.isOcupado() && atual.getTamanho() >= processo.getTamanho()) {
                 memoria.alocar(atual, processo);
-                BlocoMemoria prox = atual.getProximo();
-                cursor = (prox != null) ? prox : memoria.getPrimeiroBloco();
-
-                System.out.println("Processo " + processo.getId() +
-                        " alocado (NextFit) no bloco de tamanho " + atual.getTamanho());
-                return;
+                cursor = atual.getProximo();
+                if (cursor == null) {
+                    cursor = memoria.getPrimeiroBloco();
+                }
+                return true;
             }
             atual = (atual.getProximo() != null) ? atual.getProximo() : memoria.getPrimeiroBloco();
         } while (atual != inicio);
 
-        System.out.println("Nao ha espaco suficiente para o processo " + processo.getId());
+        return false;
     }
 
+    @Override
     public void desalocar(Processo processo) {
         BlocoMemoria atual = memoria.getPrimeiroBloco();
         while (atual != null) {
             if (atual.isOcupado() && atual.getProcesso().getId() == processo.getId()) {
                 memoria.desalocar(atual);
-                System.out.println("Processo " + processo.getId() + " desalocado (NextFit).");
                 return;
             }
             atual = atual.getProximo();
         }
-        System.out.println("Processo " + processo.getId() + " nao encontrado na memoria");
     }
 }
-
