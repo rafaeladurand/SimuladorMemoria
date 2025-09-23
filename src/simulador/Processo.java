@@ -10,6 +10,10 @@ public class Processo {
         this.tamanho = tamanho;
     }
 
+    public static void resetarContadorId() {
+        contador = 0;
+    }
+
     public int getId() {
         return id;
     }

@@ -9,6 +9,10 @@ public class Memoria {
         primeiro = new BlocoMemoria(TAMANHO_TOTAL);
     }
 
+    public int getTamanhoTotal() {
+        return TAMANHO_TOTAL;
+    }
+
     public void alocar(BlocoMemoria bloco, Processo processo) {
         if (bloco.getTamanho() > processo.getTamanho()) {
             int resto = bloco.getTamanho() - processo.getTamanho();
