@@ -1,7 +1,6 @@
 package simulador;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -12,6 +11,8 @@ public class Simulador {
 
     private static final int TAMANHO_MIN_PROCESSO = 10;
     private static final int TAMANHO_MAX_PROCESSO = 100;
+    
+    private static final boolean MODO_VERBOSE = true;
 
     public static void main(String[] args) {
         System.out.println("Iniciando Simulação de Alocação de Memória (Atividade 3)...");
@@ -27,8 +28,11 @@ public class Simulador {
     private static void executarSimulacaoParaAtividade(String nomeAlgoritmo) {
         Random random = new Random();
 
+        System.out.println("======================================================");
+        System.out.printf("Executando Simulação para o Algoritmo: %s\n", nomeAlgoritmo);
+        System.out.println("------------------------------------------------------");
+
         Metricas resultadoDaRodada = rodarSimulacaoUnica(nomeAlgoritmo, random);
-        
         imprimirResultadosFinais(nomeAlgoritmo, resultadoDaRodada);
     }
 
@@ -49,29 +53,40 @@ public class Simulador {
         
         GeradorDeProcessos gerador = new GeradorDeProcessos();
         Metricas metricasDaRodada = new Metricas(memoria);
-
         List<Processo> processosAtivos = new ArrayList<>();
 
         for (int tempoAtual = 0; tempoAtual < DURACAO_SIMULACAO_SEGUNDOS; tempoAtual++) {
+            if (MODO_VERBOSE) {
+                System.out.printf("\n--- Tempo: %ds ---\n", tempoAtual);
+            }
 
             if (!processosAtivos.isEmpty()) {
-
                 int processosARemover = 1 + random.nextInt(2); 
                 
                 for (int i = 0; i < processosARemover && !processosAtivos.isEmpty(); i++) {
                     int indiceAleatorio = random.nextInt(processosAtivos.size());
                     Processo processoRemovido = processosAtivos.remove(indiceAleatorio);
                     alocador.desalocar(processoRemovido);
+                    if (MODO_VERBOSE) {
+                        System.out.printf("   [SAÍDA] Processo %d removido.\n", processoRemovido.getId());
+                    }
                 }
             }
+
             for (int i = 0; i < 2; i++) {
                 Processo novoProcesso = gerador.gerarProcesso(TAMANHO_MIN_PROCESSO, TAMANHO_MAX_PROCESSO);
                 
                 if (alocador.alocar(novoProcesso)) {
                     processosAtivos.add(novoProcesso); 
                     metricasDaRodada.registrarAlocacaoBemSucedida();
+                    if (MODO_VERBOSE) {
+                        System.out.printf("   [ENTRADA] Processo %d (tam: %d) alocado.\n", novoProcesso.getId(), novoProcesso.getTamanho());
+                    }
                 } else {
                     metricasDaRodada.registrarAlocacaoFalha();
+                    if (MODO_VERBOSE) {
+                        System.out.printf("   [FALHA] Processo %d (tam: %d) não pôde ser alocado.\n", novoProcesso.getId(), novoProcesso.getTamanho());
+                    }
                 }
             }
             
@@ -84,9 +99,8 @@ public class Simulador {
         long totalAlocacoes = metricas.getAlocacoesBemSucedidas() + metricas.getAlocacoesFalhas();
         double taxaSucesso = (totalAlocacoes == 0) ? 0 : (double) metricas.getAlocacoesBemSucedidas() / totalAlocacoes * 100.0;
         
-        System.out.println("======================================================");
-        System.out.printf("Resultados Finais para o Algoritmo: %s\n", nomeAlgoritmo);
-        System.out.println("------------------------------------------------------");
+        System.out.println("\n------------------------------------------------------");
+        System.out.println("Métricas Finais:");
         System.out.printf("Taxa de Sucesso de Alocação: %.2f%%\n", taxaSucesso);
         System.out.printf("Utilização Média da Memória: %.2f%%\n", metricas.getMediaUtilizacaoMemoria());
         System.out.printf("Média de Blocos Livres (Fragmentação): %.2f blocos\n", metricas.getMediaFragmentacaoExterna());
