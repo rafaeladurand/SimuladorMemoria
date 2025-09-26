@@ -12,10 +12,10 @@ public class Simulador {
     private static final int TAMANHO_MIN_PROCESSO = 10;
     private static final int TAMANHO_MAX_PROCESSO = 100;
     
-    private static final boolean MODO_VERBOSE = true;
+    private static final boolean MODO_VERBOSE = false;
 
     public static void main(String[] args) {
-        System.out.println("Iniciando Simulação de Alocação de Memória (Atividade 3)...");
+        System.out.println("Iniciando Simulação de Alocação de Memória...");
         System.out.printf("Duração da simulação: %d segundos.\n\n", DURACAO_SIMULACAO_SEGUNDOS);
 
         List<String> nomesAlgoritmos = List.of("First-Fit", "Best-Fit", "Next-Fit", "Worst-Fit");
