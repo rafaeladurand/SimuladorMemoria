@@ -12,7 +12,7 @@ public class Simulador {
     private static final int TAMANHO_MIN_PROCESSO = 10;
     private static final int TAMANHO_MAX_PROCESSO = 100;
     
-    private static final boolean MODO_VERBOSE = false;
+    private static final boolean MODO_VERBOSE = true;
 
     public static void main(String[] args) {
         System.out.println("Iniciando Simulação de Alocação de Memória...");
